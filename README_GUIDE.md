@@ -10,7 +10,7 @@ Dự án này kết hợp ba mô hình xử lý ảnh:
 ### 🚀 Cách chạy dự án
 
 ## Clone project về:
-git clone https://github.com/ultralytics/ultralytics.git
+git clone https://github.com/Tanh36054/yolo_deeplab_nst.git
 
 ## Bước 1️⃣: Cài Python
 Tải và cài Python phiên bản 3.10 hoặc 3.11 từ
