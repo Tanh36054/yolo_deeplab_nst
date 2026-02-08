@@ -1,11 +1,13 @@
-import streamlit as st
-from ultralytics import YOLO
 import tempfile
+
 import cv2
 import numpy as np
+import streamlit as st
 import torch
 import torchvision.transforms as T
 from torchvision import models
+
+from ultralytics import YOLO
 
 # ------------------- Load Models -------------------
 # YOLOv8
@@ -14,26 +16,28 @@ yolo_model = YOLO("yolov8n.pt")
 # DeepLabv3 (PyTorch pretrained)
 deeplab_model = models.segmentation.deeplabv3_resnet50(pretrained=True).eval()
 
+
 # ------------------- DeepLab Function -------------------
 def run_deeplab(image_np):
     h, w, _ = image_np.shape
-    
-    transform = T.Compose([
-        T.ToPILImage(),
-        T.Resize(520),
-        T.ToTensor(),
-        T.Normalize(mean=[0.485, 0.456, 0.406],
-                    std=[0.229, 0.224, 0.225]),
-    ])
+
+    transform = T.Compose(
+        [
+            T.ToPILImage(),
+            T.Resize(520),
+            T.ToTensor(),
+            T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ]
+    )
     inp = transform(image_np).unsqueeze(0)
 
     with torch.no_grad():
-        out = deeplab_model(inp)['out'][0]
+        out = deeplab_model(inp)["out"][0]
     seg_map = out.argmax(0).byte().cpu().numpy()
-    
+
     # resize seg_map về kích thước ban đầu
     seg_map = cv2.resize(seg_map, (w, h), interpolation=cv2.INTER_NEAREST)
-    
+
     # Tạo mask màu ngẫu nhiên
     mask = np.zeros_like(image_np)
     for label in np.unique(seg_map):
@@ -41,6 +45,7 @@ def run_deeplab(image_np):
 
     overlay = cv2.addWeighted(image_np, 0.6, mask, 0.4, 0)
     return overlay
+
 
 # ------------------- Streamlit UI -------------------
 st.set_page_config(page_title="YOLO + DeepLab Demo", layout="wide")
@@ -53,7 +58,7 @@ st.markdown(
     Ngô Thị Thanh Vân – Nguyễn Thế Anh – Nguyễn Tiến Hưng – Quang Hồng Ánh Sứ
     </p>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 # Sidebar chọn chế độ
@@ -62,12 +67,12 @@ mode = st.sidebar.radio("Chọn chế độ:", ["Ảnh", "Video", "Webcam"])
 
 # ------------------- YOLOv8 -------------------
 if task == "YOLOv8":
-
     # ẢNH
     if mode == "Ảnh":
         uploaded_file = st.file_uploader("Tải ảnh", type=["jpg", "jpeg", "png"])
         if uploaded_file is not None:
             import os
+
             suffix = os.path.splitext(uploaded_file.name)[1]
             with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
                 tmp.write(uploaded_file.read())
@@ -83,6 +88,7 @@ if task == "YOLOv8":
         uploaded_file = st.file_uploader("Tải video", type=["mp4", "avi", "mov", "mkv"])
         if uploaded_file is not None:
             import os
+
             suffix = os.path.splitext(uploaded_file.name)[1]
             with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
                 tmp.write(uploaded_file.read())
@@ -90,7 +96,7 @@ if task == "YOLOv8":
 
             st.video(tmp_path)
             st.write("👉 Kết quả.")
-            
+
             cap = cv2.VideoCapture(tmp_path)
             stframe = st.empty()
             while cap.isOpened():
@@ -123,6 +129,7 @@ elif task == "DeepLab":
         uploaded_file = st.file_uploader("Tải ảnh để phân đoạn", type=["jpg", "jpeg", "png"])
         if uploaded_file is not None:
             import os
+
             suffix = os.path.splitext(uploaded_file.name)[1]
             with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
                 tmp.write(uploaded_file.read())
